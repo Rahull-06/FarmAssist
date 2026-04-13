@@ -2,7 +2,6 @@ import { useState } from "react";
 import ResultCard from "../components/ResultCard";
 import { getPrediction } from "../services/api";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const DISTRICTS = [
     "Adilabad", "Bhadradri Kothagudem", "Hyderabad", "Jagtial",
@@ -19,7 +18,6 @@ const DISTRICTS = [
 const SOIL_TYPES = ["Loamy", "Clay", "Sandy", "Black Cotton", "Red Sandy", "Alluvial"];
 const SEASONS    = ["Kharif (Rainy)", "Rabi (Winter)", "Zaid (Summer)"];
 
-// ─── Loading steps shown during analysis ─────────────────────────────────────
 const LOADING_STEPS = [
     { icon: "🌤️", text: "Fetching live weather from OpenWeatherMap..." },
     { icon: "🌾", text: "Analysing crop suitability for your soil..." },
@@ -28,7 +26,6 @@ const LOADING_STEPS = [
     { icon: "💾", text: "Saving your prediction to database..." },
 ];
 
-// ─── SelectField Component ────────────────────────────────────────────────────
 
 function SelectField({ label, icon, value, onChange, options, placeholder, hasError }) {
     return (
@@ -67,7 +64,6 @@ function SelectField({ label, icon, value, onChange, options, placeholder, hasEr
     );
 }
 
-// ─── Animated Loading State ───────────────────────────────────────────────────
 
 function LoadingState({ step }) {
     return (
@@ -103,7 +99,6 @@ function LoadingState({ step }) {
     );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Home() {
     const [form, setForm]         = useState({ district: "", soil: "", season: "", land: "" });
@@ -130,7 +125,6 @@ export default function Home() {
         return !Object.values(e).some(Boolean);
     };
 
-    // ✅ Longer step intervals to match real 30-60s AI generation time
     const runLoadingSteps = () => {
         setLoadStep(0);
         const intervals = [2000, 5000, 8000, 12000];

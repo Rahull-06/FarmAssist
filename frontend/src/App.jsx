@@ -4,7 +4,6 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 
-// Simple About page inline
 function About() {
   return (
     <div className="min-h-screen bg-[#080f07] pt-28 pb-20 px-6" style={{ fontFamily: "'Sora', sans-serif" }}>

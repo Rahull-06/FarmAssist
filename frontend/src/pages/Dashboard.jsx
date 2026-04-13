@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { getHistory, deletePrediction } from "../services/api";
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-
 const RISK_CONFIG = {
     Low:    { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30", dot: "bg-emerald-400" },
     Medium: { bg: "bg-amber-500/10",   text: "text-amber-400",   border: "border-amber-500/30",   dot: "bg-amber-400"   },
@@ -17,8 +15,6 @@ const SEASON_EMOJI = {
 
 const SEASONS = ["All", "Kharif (Rainy)", "Rabi (Winter)", "Zaid (Summer)"];
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function Dashboard() {
     const [predictions, setPredictions] = useState([]);
     const [filter,      setFilter     ] = useState("All");
@@ -27,7 +23,6 @@ export default function Dashboard() {
     const [error,       setError      ] = useState("");
     const [deleting,    setDeleting   ] = useState(null);
 
-    // ── Fetch from MongoDB on mount ───────────────────────────────────────────
     useEffect(() => {
         fetchHistory();
     }, []);
@@ -59,12 +54,10 @@ export default function Dashboard() {
         }
     };
 
-    // ── Filter logic ──────────────────────────────────────────────────────────
     const filtered = filter === "All"
         ? predictions
         : predictions.filter((p) => p.season === filter);
 
-    // ── Stats from REAL MongoDB data ──────────────────────────────────────────
     const stats = {
         total:      predictions.length,
         low:        predictions.filter((p) => p.riskLevel === "Low").length,
@@ -74,7 +67,6 @@ export default function Dashboard() {
         totalAcres: predictions.reduce((a, b) => a + (b.land ?? 0), 0),
     };
 
-    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-[#080f07] pt-24 pb-20" style={{ fontFamily: "'Sora', sans-serif" }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6">

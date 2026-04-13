@@ -119,10 +119,7 @@ const CROP_DB = {
     },
 };
 
-/**
- * Normalize soil type string to database key
- * "Black Cotton" → "black", "Red Sandy" → "red", etc.
- */
+
 export function normalizeSoilKey(soil) {
     const s = soil.toLowerCase();
     if (s.includes("black"))    return "black";
@@ -133,17 +130,12 @@ export function normalizeSoilKey(soil) {
     return "loamy";
 }
 
-/**
- * Get crop recommendations based on season and soil type.
- * Adjusts confidence scores based on live weather conditions.
- */
 export function getCropRecommendations(season, soil, weather) {
     const seasonKey = season.toLowerCase();
     const soilKey   = normalizeSoilKey(soil);
 
     let crops = CROP_DB[seasonKey]?.[soilKey] ?? CROP_DB[seasonKey]?.loamy ?? CROP_DB["kharif (rainy)"].loamy;
 
-    // ── Weather-based confidence adjustment ───────────────────────────────────
     // If live weather is bad, reduce confidence scores realistically
     crops = crops.map((crop) => {
         let adjusted = crop.confidence;
@@ -171,9 +163,7 @@ export function getCropRecommendations(season, soil, weather) {
     return crops;
 }
 
-/**
- * Calculate risk level based on live weather + land size
- */
+
 export function calculateRisk(weather, land) {
     let score = 0;
 

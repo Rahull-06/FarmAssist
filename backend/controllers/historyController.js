@@ -9,17 +9,15 @@ export async function getHistory(req, res) {
     try {
         const { limit = 20, district, season } = req.query;
 
-        // Build filter object for optional query params
         const filter = {};
         if (district) filter.district = new RegExp(district, "i");
         if (season)   filter.season   = new RegExp(season,   "i");
 
         const predictions = await Prediction.find(filter)
-            .sort({ createdAt: -1 })          // Newest first
+            .sort({ createdAt: -1 })
             .limit(parseInt(limit))
-            .select("-__v")                    // Exclude Mongoose version key
-            .lean();                           // Return plain JS objects (faster)
-
+            .select("-__v")
+            .lean();
         return res.status(200).json({
             success: true,
             count:   predictions.length,

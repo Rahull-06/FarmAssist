@@ -55,23 +55,20 @@ export async function getLiveWeather(district) {
     }
 
     try {
-        // OpenWeatherMap Current Weather API
-        // Docs: https://openweathermap.org/current
         const url = `https://api.openweathermap.org/data/2.5/weather`;
         const response = await axios.get(url, {
             params: {
                 lat:   coords.lat,
                 lon:   coords.lon,
                 appid: apiKey,
-                units: "metric",   // Celsius
+                units: "metric",
                 lang:  "en",
             },
-            timeout: 8000,   // 8 second timeout
+            timeout: 8000,
         });
 
         const data = response.data;
 
-        // ── Parse OpenWeatherMap response ─────────────────────────────────────
         const weather = {
             temperature: Math.round(data.main.temp),
             feelsLike:   Math.round(data.main.feels_like),

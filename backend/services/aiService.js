@@ -1,27 +1,45 @@
 /**
  * aiService.js — Powered by Google Gemini (Free tier, no credit card needed)
- * Get your free API key at: https://aistudio.google.com
- * Add to .env: GEMINI_API_KEY=your_key_here
+ * Get free API key at: https://aistudio.google.com
+ * Add to .env: GEMINI_API_KEY=API_key_here
  */
 
 const GEMINI_API_URL =
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 /**
+ * Fallback advice generator — rule-based, always works, no API needed.
+ * Used when Gemini is rate-limited or unavailable.
+ */
+function generateFallbackAdvice({ district, soil, season, weather, crops, riskLevel }) {
+    const topCrop = crops[0]?.name ?? "your selected crops";
+    const temp    = weather.temperature;
+    const humidity = weather.humidity;
+
+    let weatherNote = "";
+    if (temp > 37)        weatherNote = `With the current high temperature of ${temp}°C, heat stress is a concern — ensure adequate irrigation and consider mulching to retain soil moisture.`;
+    else if (temp < 20)   weatherNote = `The current cool temperature of ${temp}°C is favorable for Rabi crops — monitor for frost risk during early morning hours.`;
+    else                  weatherNote = `Current conditions of ${temp}°C and ${humidity}% humidity are ${humidity > 70 ? "moderately humid — watch for fungal diseases" : "suitable for field operations"}.`;
+
+    let riskNote = "";
+    if (riskLevel === "High")        riskNote = "Given the elevated risk level, prioritize drought-tolerant varieties and maintain strict irrigation schedules.";
+    else if (riskLevel === "Medium") riskNote = "Moderate risk conditions require regular monitoring — scout fields every 3–4 days for pest and moisture stress signs.";
+    else                             riskNote = "Favorable low-risk conditions are ideal for timely sowing and standard agronomic practices.";
+
+    return `Based on current conditions in ${district}, ${topCrop} is your best bet for the ${season} season on ${soil} soil. ${weatherNote} ${riskNote} Ensure NPK fertilizer application at sowing stage and monitor market prices as the season progresses for optimal selling timing.`;
+}
+
+/**
  * Generate TRULY dynamic AI farming advice using Google Gemini.
- *
- * This is NOT a template or rule-based response.
- * Gemini receives real live weather + crop data and generates
- * a unique, context-aware advisory paragraph every single time.
- *
- * Faculty answer: "We use Gemini (Google's LLM) via API to generate
- * real AI-driven advice based on live inputs — not pre-written templates."
+ * Falls back to rule-based advice if Gemini is unavailable.
  */
 export async function generateAIAdvice({ district, soil, season, land, weather, crops, riskLevel }) {
     const apiKey = process.env.GEMINI_API_KEY;
 
+    // If no API key at all, use fallback immediately
     if (!apiKey) {
-        throw new Error("GEMINI_API_KEY is not set in .env");
+        console.warn("⚠️  No GEMINI_API_KEY — using fallback advice");
+        return generateFallbackAdvice({ district, soil, season, weather, crops, riskLevel });
     }
 
     const prompt = `You are an expert agricultural advisor specializing in Telangana, India farming.
@@ -56,8 +74,8 @@ Based on ALL of this real data, write a detailed, practical farming advisory (3�
 
 Write in a professional but farmer-friendly tone. Be specific, not generic. Do NOT use bullet points — write as flowing paragraphs. Max 150 words.`;
 
-    // Auto-retry on rate limit — 4s delay keeps total well under 60s axios timeout
-    const callGemini = async (retries = 3) => {
+    // Auto-retry on rate limit — 4s delay, max 2 retries
+    const callGemini = async (retries = 2) => {
         const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -74,47 +92,45 @@ Write in a professional but farmer-friendly tone. Be specific, not generic. Do N
             const err = await response.json();
             const status = response.status;
 
-            if (status === 400) throw new Error("Invalid Gemini request. Check prompt format.");
-            if (status === 403) throw new Error("Invalid Gemini API key. Check GEMINI_API_KEY in .env");
+            if (status === 400) throw new Error(`invalid_request`);
+            if (status === 403) throw new Error(`invalid_key`);
 
-            // Auto-retry on rate limit with 4s delay (3 retries = max ~12s extra)
             if (status === 429) {
                 if (retries > 0) {
-                    console.log(`⏳ Gemini rate limit hit — retrying in 4s... (${retries} retries left)`);
+                    console.log(`⏳ Gemini rate limit — retrying in 4s... (${retries} left)`);
                     await new Promise(resolve => setTimeout(resolve, 4000));
                     return callGemini(retries - 1);
                 }
-                throw new Error("Gemini API rate limit reached. Please wait a minute and try again.");
+                throw new Error(`rate_limited`);
             }
 
-            throw new Error(`Gemini API error ${status}: ${err?.error?.message ?? "Unknown error"}`);
+            throw new Error(`api_error_${status}`);
         }
 
         const data = await response.json();
         const advice = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-        if (!advice) throw new Error("Gemini returned an empty response");
-
+        if (!advice) throw new Error("empty_response");
         return advice;
     };
 
     try {
         const advice = await callGemini();
-        console.log(`✅ AI advice generated for ${district} (${season}, ${soil})`);
+        console.log(`✅ Gemini AI advice generated for ${district} (${season}, ${soil})`);
         return advice;
 
     } catch (error) {
-        throw new Error(`AI advice generation failed: ${error.message}`);
+        // ✅ FALLBACK — instead of crashing the whole request, return rule-based advice
+        console.warn(`⚠️  Gemini unavailable (${error.message}) — using fallback advice for ${district}`);
+        return generateFallbackAdvice({ district, soil, season, weather, crops, riskLevel });
     }
 }
 
 /**
- * Generate action items — weather-adjusted rule-based logic (no extra API call)
+ * Generate action items — weather-adjusted rule-based logic (no API call)
  */
 export async function generateActionItems({ season, weather, crops, riskLevel }) {
     const items = [];
 
-    // Irrigation advice based on LIVE humidity + temperature
     if (weather.humidity < 50 || weather.temperature > 37) {
         items.push({ icon: "💧", title: "Irrigation", desc: `Critical — irrigate every 3 days (${weather.temperature}°C heat stress)` });
     } else if (weather.humidity < 65) {
@@ -123,10 +139,8 @@ export async function generateActionItems({ season, weather, crops, riskLevel })
         items.push({ icon: "💧", title: "Irrigation", desc: "Moisture adequate — monitor weekly" });
     }
 
-    // Fertilizer
     items.push({ icon: "🌱", title: "Fertilizer", desc: "Apply NPK at sowing stage" });
 
-    // Pest watch — season specific
     if (season.toLowerCase().includes("kharif")) {
         items.push({ icon: "🐛", title: "Pest Watch", desc: "Monitor whitefly & aphids from day 30" });
     } else if (season.toLowerCase().includes("rabi")) {

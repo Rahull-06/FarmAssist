@@ -1,7 +1,9 @@
+// backend/server.js
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import { createServer } from "http";
 import predictRoutes from "./routes/predict.js";
 import historyRoutes from "./routes/history.js";
 
@@ -10,10 +12,15 @@ dotenv.config();
 const app = express();
 
 // ── Middleware ──────────────────────────────────────────────────────────────
-app.use(cors({
+const corsOptions = {
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
-}));
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 // ── Routes ──────────────────────────────────────────────────────────────────
@@ -38,11 +45,52 @@ if (!MONGO_URI) {
     process.exit(1);
 }
 
+// Create HTTP server separately so we can close it cleanly
+const server = createServer(app);
+
+// ── Graceful Shutdown (prevents EADDRINUSE on next restart) ─────────────────
+function gracefulShutdown(signal) {
+    console.log(`\n⚠️  ${signal} received — shutting down gracefully...`);
+    server.close(() => {
+        console.log("✅ HTTP server closed");
+        mongoose.connection.close(false).then(() => {
+            console.log("✅ MongoDB connection closed");
+            process.exit(0);
+        });
+    });
+
+    // Force-exit if it takes more than 5 seconds
+    setTimeout(() => {
+        console.error("❌ Forced shutdown after timeout");
+        process.exit(1);
+    }, 5000);
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT",  () => gracefulShutdown("SIGINT"));   // Ctrl+C
+
+// ── Handle EADDRINUSE cleanly instead of crashing ───────────────────────────
+server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+        console.error(`\n❌ Port ${PORT} is already in use!`);
+        console.error(`👉 Run this command to fix it, then restart:\n`);
+        console.error(`   For Windows (CMD / PowerShell):`);
+        console.error(`   netstat -ano | findstr :${PORT}`);
+        console.error(`   taskkill /PID <PID_NUMBER> /F\n`);
+        console.error(`   For Mac/Linux:`);
+        console.error(`   lsof -ti :${PORT} | xargs kill -9\n`);
+        process.exit(1);
+    } else {
+        throw err;
+    }
+});
+
+// ── Connect to MongoDB then start server ─────────────────────────────────────
 mongoose
     .connect(MONGO_URI)
     .then(() => {
         console.log("✅ MongoDB connected successfully");
-        app.listen(PORT, () => {
+        server.listen(PORT, () => {
             console.log(`🚀 Server running at http://localhost:${PORT}`);
         });
     })

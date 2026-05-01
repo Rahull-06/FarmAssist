@@ -243,7 +243,6 @@ git push origin feature/your-feature
 MIT License
 
 ---
-
 ## 👨‍💻 Author
 
 **Rahul Rathod**

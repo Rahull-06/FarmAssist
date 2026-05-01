@@ -3,34 +3,34 @@ export default function ResultCard({ result }) {
 
     const riskColors = {
         Low: {
-            bg:     "bg-emerald-500/10",
-            text:   "text-emerald-400",
+            bg: "bg-emerald-500/10",
+            text: "text-emerald-400",
             border: "border-emerald-500/30",
-            dot:    "bg-emerald-400",
+            dot: "bg-emerald-400",
         },
         Medium: {
-            bg:     "bg-amber-500/10",
-            text:   "text-amber-400",
+            bg: "bg-amber-500/10",
+            text: "text-amber-400",
             border: "border-amber-500/30",
-            dot:    "bg-amber-400",
+            dot: "bg-amber-400",
         },
         High: {
-            bg:     "bg-red-500/10",
-            text:   "text-red-400",
+            bg: "bg-red-500/10",
+            text: "text-red-400",
             border: "border-red-500/30",
-            dot:    "bg-red-400",
+            dot: "bg-red-400",
         },
     };
     const risk = riskColors[result.riskLevel] ?? riskColors.Medium;
 
     const weatherIcons = {
-        sunny:           "☀️",
-        cloudy:          "☁️",
-        rainy:           "🌧️",
-        foggy:           "🌫️",
+        sunny: "☀️",
+        cloudy: "☁️",
+        rainy: "🌧️",
+        foggy: "🌫️",
         "partly cloudy": "⛅",
-        thunderstorm:    "⛈️",
-        clear:           "🌤️",
+        thunderstorm: "⛈️",
+        clear: "🌤️",
     };
     const weatherIcon =
         weatherIcons[result.weather?.condition?.toLowerCase()] ?? "🌤️";
@@ -44,9 +44,9 @@ export default function ResultCard({ result }) {
                 <h2 className="text-2xl font-bold text-white">Analysis Results</h2>
                 <div className="ml-auto text-xs text-white/40 font-mono">
                     {new Date().toLocaleDateString("en-IN", {
-                        day:   "numeric",
+                        day: "numeric",
                         month: "short",
-                        year:  "numeric",
+                        year: "numeric",
                     })}
                 </div>
             </div>
@@ -160,6 +160,11 @@ export default function ResultCard({ result }) {
                                 <div className="text-[#38bdf8] text-xs font-semibold mb-1 uppercase tracking-wider">
                                     Rainfall
                                 </div>
+
+                                {/* <div className="text-white font-bold text-lg">
+                                    {result.weather.rainfall > 0 ? `${result.weather.rainfall}mm` : "—"}
+                                </div> */}
+                    
                                 <div className="text-white font-bold text-lg">
                                     {result.weather.rainfall}mm
                                 </div>

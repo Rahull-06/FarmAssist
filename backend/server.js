@@ -27,6 +27,10 @@ app.use(express.json());
 app.use("/api/predict", predictRoutes);
 app.use("/api/history", historyRoutes);
 
+app.get("/", (req, res) => {
+    res.send("FarmAssist API is running 🚀");
+});
+
 // ── Health Check ────────────────────────────────────────────────────────────
 app.get("/api/health", (req, res) => {
     res.json({
@@ -67,7 +71,7 @@ function gracefulShutdown(signal) {
 }
 
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT",  () => gracefulShutdown("SIGINT"));   // Ctrl+C
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));   // Ctrl+C
 
 // ── Handle EADDRINUSE cleanly instead of crashing ───────────────────────────
 server.on("error", (err) => {
